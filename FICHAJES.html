@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fichajes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#F0EFE9;color:#1a1a18;min-height:100vh;font-size:14px}
+
+/* LAYOUT */
+.layout{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:#fff;border-bottom:1.5px solid #E2E0D8;padding:.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;position:sticky;top:0;z-index:50}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.logo-dot{width:12px;height:12px;border-radius:50%;background:#1D9E75;flex-shrink:0}
+.topbar h1{font-size:16px;font-weight:700;color:#1a1a18}
+.topbar-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* BUTTONS */
+.btn{font-size:12px;padding:5px 12px;border-radius:7px;border:1.5px solid #D3D0C8;background:#fff;color:#1a1a18;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-weight:600;white-space:nowrap;transition:.12s}
+.btn:hover{background:#F0EFE9}
+.btn-green{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.btn-green:hover{background:#16825F;border-color:#16825F}
+.btn-blue{background:#185FA5;color:#fff;border-color:#185FA5}
+.btn-blue:hover{background:#0D4880;border-color:#0D4880}
+.btn-teal{background:#0A7E8C;color:#fff;border-color:#0A7E8C}
+.btn-teal:hover{background:#065F6A;border-color:#065F6A}
+.btn-excel{background:#217346;color:#fff;border-color:#217346}
+.btn-excel:hover{background:#175730;border-color:#175730}
+.btn-ghost{background:none;border:1.5px solid #D3D0C8;color:#5F5E5A}
+.btn-ghost:hover{background:#F0EFE9}
+.btn-danger{background:#A32D2D;color:#fff;border-color:#A32D2D}
+.btn-danger:hover{background:#7E1F1F;border-color:#7E1F1F}
+
+/* MAIN AREA */
+.main{display:flex;gap:0;flex:1;min-height:0}
+.content{flex:1;padding:1.25rem 1.5rem;min-width:0;transition:.25s}
+.content.shifted{margin-right:420px}
+
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem}
+.card{padding:.85rem 1rem;border-radius:10px;border:1.5px solid transparent}
+.card-lbl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:4px}
+.card-val{font-size:20px;font-weight:700;line-height:1.1}
+.card-sub{font-size:11px;margin-top:2px;opacity:.75}
+.cg{background:#E1F5EE;border-color:#9FE1CB}.cg .card-lbl,.cg .card-val{color:#0F6E56}
+.cr{background:#FCEBEB;border-color:#F7C1C1}.cr .card-lbl,.cr .card-val{color:#A32D2D}
+.cb{background:#E6F1FB;border-color:#B5D4F4}.cb .card-lbl,.cb .card-val{color:#185FA5}
+.ca{background:#FAEEDA;border-color:#FAC775}.ca .card-lbl,.ca .card-val{color:#854F0B}
+.cn{background:#fff;border-color:#E2E0D8}.cn .card-lbl{color:#888780}.cn .card-val{color:#1a1a18}
+.cp{background:#EEE6FB;border-color:#C9B4F4}.cp .card-lbl,.cp .card-val{color:#4B2D9B}
+
+/* TABS */
+.tabs{display:flex;gap:2px;background:#E2E0D8;padding:3px;border-radius:9px;margin-bottom:1.25rem;width:fit-content}
+.tab{font-size:12px;font-weight:600;padding:5px 14px;border-radius:7px;border:none;background:none;color:#888780;cursor:pointer;transition:.12s}
+.tab.active{background:#fff;color:#1a1a18;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* FORM PANEL */
+.panel{background:#fff;border:1.5px solid #E2E0D8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem}
+.panel-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#888780;margin-bottom:.85rem;display:flex;align-items:center;gap:6px}
+.panel-title::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%}
+.pt-green::before{background:#1D9E75}
+.pt-purple::before{background:#7B5CF0}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:8px;margin-bottom:.85rem}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#888780}
+.fg input,.fg select{font-size:13px;padding:7px 9px;border-radius:7px;border:1.5px solid #D3D0C8;background:#fff;color:#1a1a18;width:100%;transition:.12s}
+.fg input:focus,.fg select:focus{outline:none;border-color:#1D9E75;box-shadow:0 0 0 3px rgba(29,158,117,.12)}
+.jopts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.85rem}
+.jopt{font-size:12px;padding:4px 12px;border-radius:20px;border:1.5px solid #D3D0C8;background:#F0EFE9;color:#5F5E5A;cursor:pointer;font-weight:600;transition:.12s}
+.jopt:hover{border-color:#EF9F27;color:#854F0B}
+.jopt.active{background:#FAEEDA;border-color:#EF9F27;color:#854F0B}
+.custom-t{display:none;margin-bottom:.85rem}
+.form-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* TABLE */
+.table-wrap{background:#fff;border:1.5px solid #E2E0D8;border-radius:12px;overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+thead{background:#F5F4F0}
+th{padding:8px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;border-bottom:1.5px solid #E2E0D8}
+.th-fecha{color:#185FA5}.th-ent{color:#1D9E75}.th-sal{color:#A32D2D}
+.th-jor{color:#854F0B}.th-real{color:#534AB7}.th-saldo{color:#1a1a18}
+td{padding:8px 10px;border-bottom:1px solid #F0EFE9;vertical-align:middle;white-space:nowrap;font-size:13px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAF7}
+.td-f{color:#1a1a18;font-weight:700}
+.td-e{color:#1D9E75;font-weight:700}
+.td-s{color:#A32D2D;font-weight:700}
+.td-j{color:#BA7517;font-weight:600}
+.td-r{color:#534AB7;font-weight:600}
+.sp{color:#1D9E75;font-weight:700}.sn{color:#A32D2D;font-weight:700}.sz{color:#888780}
+.nota-chip{font-size:11px;background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;padding:2px 8px;border-radius:20px;font-weight:600}
+.extra-chip{font-size:11px;background:#EEE6FB;color:#4B2D9B;border:1px solid #C9B4F4;padding:2px 8px;border-radius:20px;font-weight:600}
+.row-btns{display:flex;gap:4px}
+.ibtn{background:#fff;border:1.5px solid #E2E0D8;cursor:pointer;border-radius:6px;padding:3px 8px;font-size:12px;color:#888780;font-weight:700;transition:.12s}
+.ibtn.ie:hover{background:#E6F1FB;color:#185FA5;border-color:#B5D4F4}
+.ibtn.id:hover{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
+.we td{background:#FDFCF5}
+.tr-editing td{background:#FFF8E1 !important;outline:2px solid #EF9F27;outline-offset:-2px}
+.empty-td{text-align:center;color:#888780;padding:2.5rem 1rem}
+
+/* SIDE PANEL (edit) */
+.side-panel{position:fixed;top:0;right:-440px;width:420px;height:100vh;background:#fff;border-left:1.5px solid #E2E0D8;z-index:200;display:flex;flex-direction:column;transition:right .25s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 24px rgba(0,0,0,.08)}
+.side-panel.open{right:0}
+.side-header{padding:1rem 1.25rem;border-bottom:1.5px solid #E2E0D8;display:flex;align-items:center;justify-content:space-between;background:#FFF8E1}
+.side-header h2{font-size:15px;font-weight:700;color:#854F0B;display:flex;align-items:center;gap:8px}
+.side-header h2::before{content:'✎';font-size:16px}
+.side-close{background:none;border:1.5px solid #D3D0C8;border-radius:7px;padding:4px 10px;font-size:16px;cursor:pointer;color:#5F5E5A;font-weight:700;line-height:1}
+.side-close:hover{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
+.side-body{flex:1;overflow-y:auto;padding:1.25rem}
+.side-footer{padding:1rem 1.25rem;border-top:1.5px solid #E2E0D8;display:flex;gap:8px;justify-content:flex-end;background:#FAFAF7}
+.side-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.2);z-index:199}
+.side-overlay.open{display:block}
+
+/* HORAS EXTRA TABLE */
+.extra-table{font-size:13px}
+.extra-table th{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.th-ext-fecha{color:#4B2D9B}
+.th-ext-tipo{color:#854F0B}
+.th-ext-h{color:#0A7E8C}
+.th-ext-nota{color:#5F5E5A}
+.td-ext-h{color:#4B2D9B;font-weight:700}
+.tipo-chip{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
+.tipo-compensada{background:#E1F5EE;color:#0F6E56;border:1px solid #9FE1CB}
+.tipo-pagada{background:#FAEEDA;color:#854F0B;border:1px solid #FAC775}
+.tipo-pendiente{background:#EEE6FB;color:#4B2D9B;border:1px solid #C9B4F4}
+.tipo-abonar{background:#FFF0E6;color:#8C3A00;border:1px solid #FFBB88}
+
+/* SECTION NAV */
+.section-nav{display:flex;gap:0;margin-bottom:1.25rem;border:1.5px solid #E2E0D8;border-radius:9px;overflow:hidden;background:#F5F4F0;width:fit-content}
+.snav-btn{font-size:12px;font-weight:600;padding:6px 16px;border:none;background:none;color:#888780;cursor:pointer;transition:.12s;border-right:1.5px solid #E2E0D8}
+.snav-btn:last-child{border-right:none}
+.snav-btn.active{background:#fff;color:#1a1a18}
+.snav-btn .badge{display:inline-flex;align-items:center;justify-content:center;background:#EEE6FB;color:#4B2D9B;border-radius:10px;font-size:10px;padding:0 6px;margin-left:5px;height:16px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-dot"></div>
+      <h1>Fichajes</h1>
+    </div>
+    <div class="topbar-right">
+      <select id="monthSel" style="font-size:13px;padding:5px 9px;border-radius:7px;border:1.5px solid #D3D0C8;background:#fff;color:#1a1a18;font-weight:600"></select>
+      <button class="btn btn-ghost" onclick="addMonth()">+ Mes</button>
+      <button class="btn btn-excel" onclick="exportExcel()">⬇ Excel</button>
+      <button class="btn" style="background:#7B5CF0;color:#fff;border-color:#7B5CF0" onclick="exportBackup()">💾 Backup</button>
+      <label class="btn" style="background:#0A7E8C;color:#fff;border-color:#0A7E8C;cursor:pointer">↑ Importar<input type="file" id="importFile" accept=".json" onchange="importBackup(event)" style="display:none"></label>
+      <button class="btn" style="background:#34A853;color:#fff;border-color:#34A853" onclick="syncToSheets()" title="Enviar datos a Google Sheets">📤 Sheets</button>
+      <button class="btn" style="background:#1A73E8;color:#fff;border-color:#1A73E8" onclick="loadFromSheets()" title="Cargar datos desde Google Sheets">📥 Cargar</button>
+      <button class="btn btn-ghost" onclick="openSheetsConfig()" title="Configurar Google Sheets">⚙</button>
+    </div>
+  </div>
+
+  <!-- SHEETS STATUS BAR -->
+  <div id="sheetsBar" style="background:#E8F5E9;border-bottom:1.5px solid #A5D6A7;padding:.45rem 1.5rem;font-size:12px;color:#1B5E20;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;display:none">
+    <div style="display:flex;align-items:center;gap:7px">
+      <span style="width:8px;height:8px;border-radius:50%;background:#34A853;flex-shrink:0"></span>
+      <span id="sheetsMsg">Google Sheets conectado</span>
+    </div>
+    <span id="sheetsLastSync" style="opacity:.7;font-size:11px"></span>
+  </div>
+
+  <!-- SHEETS CONFIG MODAL -->
+  <div id="sheetsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:14px;padding:1.75rem;width:min(520px,93vw);box-shadow:0 8px 40px rgba(0,0,0,.18);border:1.5px solid #E2E0D8">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:.5rem;color:#1a1a18">Conectar con Google Sheets</h3>
+      <p style="font-size:13px;color:#5F5E5A;margin-bottom:1.25rem;line-height:1.7">
+        Para sincronizar necesitas crear un <strong>Google Apps Script</strong> como puente. Es gratuito y tarda 5 minutos. Sigue la guía incluida en el ZIP descargado o pulsa el botón de ayuda.
+      </p>
+      <div style="margin-bottom:.85rem">
+        <label style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#888780;display:block;margin-bottom:4px">URL del Web App (Google Apps Script)</label>
+        <input id="sheetsUrl" type="url" placeholder="https://script.google.com/macros/s/XXXXXXX/exec"
+          style="width:100%;font-size:13px;padding:8px 10px;border-radius:8px;border:1.5px solid #D3D0C8;color:#1a1a18">
+      </div>
+      <div style="background:#FFF8E1;border:1.5px solid #FAC775;border-radius:8px;padding:.75rem 1rem;font-size:12px;color:#633806;margin-bottom:1.25rem;line-height:1.6">
+        <strong>¿Cómo obtener la URL?</strong><br>
+        1. Abre <a href="https://script.google.com" target="_blank" style="color:#185FA5">script.google.com</a> con tu cuenta Google<br>
+        2. Nuevo proyecto → pega el código del archivo <code>google_apps_script.gs</code><br>
+        3. Implementar → Nueva implementación → Tipo: App web → Acceso: Cualquiera<br>
+        4. Copia la URL y pégala aquí
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="closeSheetsModal()" style="background:none;border:1.5px solid #D3D0C8;border-radius:7px;padding:7px 14px;font-size:13px;cursor:pointer;color:#5F5E5A;font-weight:600">Cancelar</button>
+        <button onclick="saveSheetsConfig()" style="background:#34A853;color:#fff;border:1.5px solid #34A853;border-radius:7px;padding:7px 18px;font-size:13px;cursor:pointer;font-weight:700">Guardar y conectar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="content" id="mainContent">
+
+      <!-- RESUMEN CARDS -->
+      <div class="cards" id="cardsArea">
+        <div id="cardSaldo" class="card cn">
+          <span class="card-lbl">Saldo del mes</span>
+          <span class="card-val" id="saldoMes">—</span>
+        </div>
+        <div class="card cb">
+          <span class="card-lbl">Días registrados</span>
+          <span class="card-val" id="totalDias">0</span>
+        </div>
+        <div class="card cg">
+          <span class="card-lbl">Horas a favor</span>
+          <span class="card-val" id="horasPos">0 h 00</span>
+        </div>
+        <div class="card cr">
+          <span class="card-lbl">Horas deuda</span>
+          <span class="card-val" id="horasNeg">0 h 00</span>
+        </div>
+        <div class="card cp">
+          <span class="card-lbl">H. Extra pendientes</span>
+          <span class="card-val" id="extraPend">0 h 00</span>
+        </div>
+      </div>
+
+      <!-- SECTION NAV -->
+      <div class="section-nav">
+        <button class="snav-btn active" id="snavFichajes" onclick="showSection('fichajes')">Fichajes</button>
+        <button class="snav-btn" id="snavExtra" onclick="showSection('extra')">Horas Extra <span class="badge" id="extraBadge">0</span></button>
+      </div>
+
+      <!-- SECCIÓN FICHAJES -->
+      <div id="secFichajes">
+        <div class="panel">
+          <div class="panel-title pt-green">Nuevo fichaje</div>
+          <div class="fields">
+            <div class="fg"><label>Fecha</label><input type="date" id="fFecha"></div>
+            <div class="fg"><label>Entrada</label><input type="time" id="fEntrada"></div>
+            <div class="fg"><label>Salida</label><input type="time" id="fSalida"></div>
+            <div class="fg"><label>Nota / Motivo</label><input type="text" id="fNota" placeholder="Médico, Moscoso…"></div>
+          </div>
+          <div style="margin-bottom:6px;font-size:10px;color:#888780;text-transform:uppercase;font-weight:700;letter-spacing:.07em">Jornada obligatoria</div>
+          <div class="jopts" id="jopts">
+            <button class="jopt active" data-val="07:00" onclick="selJopt(this,'jopts')">7 h 00 — Normal</button>
+            <button class="jopt" data-val="03:30" onclick="selJopt(this,'jopts')">3 h 30 — Media</button>
+            <button class="jopt" data-val="05:00" onclick="selJopt(this,'jopts')">5 h 00 — Estival</button>
+            <button class="jopt" data-val="custom" onclick="selJopt(this,'jopts')">Personalizada…</button>
+          </div>
+          <div class="custom-t" id="customJ">
+            <input type="time" id="fJornada" value="07:00" style="font-size:13px;padding:7px 9px;border-radius:7px;border:1.5px solid #D3D0C8">
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-green" onclick="addFichaje()">+ Añadir fichaje</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="th-fecha">Fecha</th>
+                <th class="th-ent">Entrada</th>
+                <th class="th-sal">Salida</th>
+                <th class="th-jor">Jornada</th>
+                <th class="th-real">Tiempo real</th>
+                <th class="th-saldo">Saldo día</th>
+                <th class="th-saldo">Saldo acum.</th>
+                <th>Nota</th>
+                <th style="width:70px"></th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECCIÓN HORAS EXTRA -->
+      <div id="secExtra" style="display:none">
+        <div class="panel">
+          <div class="panel-title pt-purple">Registrar horas extra</div>
+          <div class="fields">
+            <div class="fg"><label>Fecha</label><input type="date" id="eFecha"></div>
+            <div class="fg"><label>Hora inicio</label><input type="time" id="eEntrada"></div>
+            <div class="fg"><label>Hora fin</label><input type="time" id="eSalida"></div>
+            <div class="fg">
+              <label>Tipo</label>
+              <select id="eTipo">
+                <option value="pendiente">Pendiente de compensar</option>
+                <option value="compensada">Compensada con descanso</option>
+                <option value="pagada">Abonada en nómina</option>
+                <option value="abonar">A abonar en nómina</option>
+              </select>
+            </div>
+            <div class="fg"><label>Nota / Motivo</label><input type="text" id="eNota" placeholder="Proyecto, guardia…"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-teal" onclick="addExtra()">+ Registrar horas extra</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="extra-table">
+            <thead>
+              <tr>
+                <th class="th-ext-fecha">Fecha</th>
+                <th class="th-ent">Inicio</th>
+                <th class="th-sal">Fin</th>
+                <th class="th-ext-h">Total</th>
+                <th class="th-ext-tipo">Estado</th>
+                <th class="th-ext-nota">Nota</th>
+                <th style="width:70px"></th>
+              </tr>
+            </thead>
+            <tbody id="etbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+
+  <!-- OVERLAY -->
+  <div class="side-overlay" id="sideOverlay" onclick="closeSide();closeSideExtra()"></div>
+
+  <!-- SIDE PANEL EDICIÓN FICHAJE -->
+  <div class="side-panel" id="sidePanel">
+    <div class="side-header">
+      <h2>Editando fichaje</h2>
+      <button class="side-close" onclick="closeSide()">✕</button>
+    </div>
+    <div class="side-body">
+      <div style="background:#FAEEDA;border:1.5px solid #FAC775;border-radius:9px;padding:.75rem 1rem;margin-bottom:1rem;font-size:13px;color:#633806">
+        Estás editando el fichaje del <strong id="sideEditDateLabel">—</strong>. Los cambios se guardan al pulsar <em>Guardar</em>.
+      </div>
+      <div class="fields" style="grid-template-columns:1fr 1fr;margin-bottom:.85rem">
+        <div class="fg"><label>Fecha</label><input type="date" id="mFecha"></div>
+        <div class="fg"><label>Nota / Motivo</label><input type="text" id="mNota" placeholder="Médico, Moscoso…"></div>
+        <div class="fg"><label>Hora entrada</label><input type="time" id="mEntrada"></div>
+        <div class="fg"><label>Hora salida</label><input type="time" id="mSalida"></div>
+      </div>
+      <div style="margin-bottom:6px;font-size:10px;color:#888780;text-transform:uppercase;font-weight:700;letter-spacing:.07em">Jornada obligatoria</div>
+      <div class="jopts" id="mJopts" style="margin-bottom:.85rem">
+        <button class="jopt active" data-val="07:00" onclick="selJopt(this,'mJopts')">7 h 00</button>
+        <button class="jopt" data-val="03:30" onclick="selJopt(this,'mJopts')">3 h 30</button>
+        <button class="jopt" data-val="05:00" onclick="selJopt(this,'mJopts')">5 h 00</button>
+        <button class="jopt" data-val="custom" onclick="selJopt(this,'mJopts')">Personalizada…</button>
+      </div>
+      <div class="custom-t" id="mCustomJ">
+        <input type="time" id="mJornada" value="07:00" style="font-size:13px;padding:7px 9px;border-radius:7px;border:1.5px solid #D3D0C8;width:120px">
+      </div>
+      <!-- preview en tiempo real -->
+      <div id="sidePreview" style="background:#F5F4F0;border-radius:9px;padding:.85rem 1rem;margin-top:.5rem;display:none">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#888780;margin-bottom:.5rem">Vista previa del cálculo</div>
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+          <div><div style="font-size:10px;color:#888780;margin-bottom:2px">Tiempo real</div><div id="pvReal" style="font-size:16px;font-weight:700;color:#534AB7">—</div></div>
+          <div><div style="font-size:10px;color:#888780;margin-bottom:2px">Saldo del día</div><div id="pvDia" style="font-size:16px;font-weight:700">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="side-footer">
+      <button class="btn btn-ghost" onclick="closeSide()">Cancelar</button>
+      <button class="btn btn-green" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div><!-- /sidePanel fichaje -->
+
+  <!-- SIDE PANEL EDICIÓN HORA EXTRA -->
+  <div class="side-panel" id="sidePanelExtra">
+    <div class="side-header" style="background:#F0EAFF">
+      <h2 style="color:#4B2D9B">✎ Editando hora extra</h2>
+      <button class="side-close" onclick="closeSideExtra()">✕</button>
+    </div>
+    <div class="side-body">
+      <div style="background:#EEE6FB;border:1.5px solid #C9B4F4;border-radius:9px;padding:.75rem 1rem;margin-bottom:1rem;font-size:13px;color:#3B1E85">
+        Estás editando la hora extra del <strong id="sideExtraDateLabel">—</strong>. Los cambios se guardan al pulsar <em>Guardar</em>.
+      </div>
+      <div class="fields" style="grid-template-columns:1fr 1fr;margin-bottom:.85rem">
+        <div class="fg"><label>Fecha</label><input type="date" id="xFecha"></div>
+        <div class="fg"><label>Nota / Motivo</label><input type="text" id="xNota" placeholder="Proyecto, guardia…"></div>
+        <div class="fg"><label>Hora inicio</label><input type="time" id="xEntrada"></div>
+        <div class="fg"><label>Hora fin</label><input type="time" id="xSalida"></div>
+      </div>
+      <div class="fg" style="margin-bottom:.85rem">
+        <label>Tipo</label>
+        <select id="xTipo" style="font-size:13px;padding:7px 9px;border-radius:7px;border:1.5px solid #D3D0C8;background:#fff;color:#1a1a18">
+          <option value="pendiente">Pendiente de compensar</option>
+          <option value="compensada">Compensada con descanso</option>
+          <option value="pagada">Abonada en nómina</option>
+          <option value="abonar">A abonar en nómina</option>
+        </select>
+      </div>
+      <!-- preview en tiempo real -->
+      <div id="sideExtraPreview" style="background:#F5F4F0;border-radius:9px;padding:.85rem 1rem;display:none">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#888780;margin-bottom:.5rem">Vista previa</div>
+        <div style="display:flex;gap:1.5rem">
+          <div><div style="font-size:10px;color:#888780;margin-bottom:2px">Total horas extra</div><div id="pvExtraTotal" style="font-size:16px;font-weight:700;color:#4B2D9B">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="side-footer">
+      <button class="btn btn-ghost" onclick="closeSideExtra()">Cancelar</button>
+      <button class="btn btn-teal" onclick="saveEditExtra()">Guardar cambios</button>
+    </div>
+  </div>
+
+
+
+<script>
+// ─── ESTADO ───────────────────────────────────────────────────────────────────
+const SK='fichajes_v4';
+function load(){try{const d=localStorage.getItem(SK);return d?JSON.parse(d):{months:{},extras:{}}}catch(e){return{months:{},extras:{}}}}
+function save(s){localStorage.setItem(SK,JSON.stringify(s))}
+let state=load();
+if(!state.months)state.months={};
+if(!state.extras)state.extras={};
+let editId=null,editMk=null;
+let editExtraId=null,editExtraMk=null;
+const DAYS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MNAMES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const TIPOS={pendiente:'Pendiente',compensada:'Compensada',pagada:'Abonada en nómina',abonar:'A abonar en nómina'};
+
+// ─── UTILIDADES ───────────────────────────────────────────────────────────────
+function toM(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;}
+function fmM(m){const s=m<0?'−':'';const a=Math.abs(m);return`${s}${Math.floor(a/60)} h ${String(a%60).padStart(2,'0')} min`;}
+function fmH(m){const a=Math.abs(m);return`${Math.floor(a/60)} h ${String(a%60).padStart(2,'0')} min`;}
+function sC(m){return m>0?'sp':m<0?'sn':'sz';}
+function fmtDate(d){const p=d.split('-');const dt=new Date(+p[0],+p[1]-1,+p[2]);return`${DAYS[dt.getDay()]} ${p[2]}/${p[1]}`;}
+function isWE(d){const p=d.split('-');const dt=new Date(+p[0],+p[1]-1,+p[2]);return dt.getDay()===0||dt.getDay()===6;}
+function tipoChip(t){return`<span class="tipo-chip tipo-${t}">${TIPOS[t]||t}</span>`;}
+
+// ─── MESES ────────────────────────────────────────────────────────────────────
+function getMonths(){
+  const k=Object.keys(state.months).sort();
+  if(!k.length){const n=new Date();const mk=ym(n.getFullYear(),n.getMonth()+1);state.months[mk]=[];save(state);return[mk];}
+  return k;
+}
+function ym(y,m){return`${y}-${String(m).padStart(2,'0')}`;}
+function addMonth(){
+  const ms=getMonths();const last=ms[ms.length-1];const[y,m]=last.split('-').map(Number);
+  let ny=y,nm=m+1;if(nm>12){nm=1;ny++;}
+  const nk=ym(ny,nm);
+  if(!state.months[nk])state.months[nk]=[];
+  save(state);renderMonthSel(nk);render();
+}
+function renderMonthSel(sel){
+  const el=document.getElementById('monthSel');
+  const ms=getMonths();
+  el.innerHTML=ms.map(k=>{const[y,m]=k.split('-').map(Number);return`<option value="${k}"${k===sel?' selected':''}>${MNAMES[m-1]} ${y}</option>`;}).join('');
+  el.onchange=()=>render();
+}
+function curMk(){return document.getElementById('monthSel').value;}
+
+// ─── SECCIÓN NAV ──────────────────────────────────────────────────────────────
+let curSection='fichajes';
+function showSection(s){
+  curSection=s;
+  document.getElementById('secFichajes').style.display=s==='fichajes'?'block':'none';
+  document.getElementById('secExtra').style.display=s==='extra'?'block':'none';
+  document.getElementById('snavFichajes').classList.toggle('active',s==='fichajes');
+  document.getElementById('snavExtra').classList.toggle('active',s==='extra');
+}
+
+// ─── JORNADA OPTS ─────────────────────────────────────────────────────────────
+function selJopt(btn,group){
+  document.querySelectorAll(`#${group} .jopt`).forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const isCustom=btn.dataset.val==='custom';
+  if(group==='jopts')document.getElementById('customJ').style.display=isCustom?'block':'none';
+  if(group==='mJopts'){document.getElementById('mCustomJ').style.display=isCustom?'block':'none';updatePreview();}
+}
+function getJornada(group,customId){
+  const a=document.querySelector(`#${group} .jopt.active`);
+  return a&&a.dataset.val!=='custom'?a.dataset.val:(document.getElementById(customId).value||'07:00');
+}
+
+// ─── RENDER FICHAJES ──────────────────────────────────────────────────────────
+function render(){
+  renderFichajes();renderExtras();updateExtraBadge();
+}
+function renderFichajes(){
+  const mk=curMk();
+  const rows=(state.months[mk]||[]).slice().sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  let acum=0,pos=0,neg=0;
+  const tbody=document.getElementById('tbody');
+  if(!rows.length){
+    tbody.innerHTML=`<tr><td colspan="9" class="empty-td">Sin fichajes este mes. Añade el primero arriba.</td></tr>`;
+    setCards(0,0,0,0);return;
+  }
+  tbody.innerHTML=rows.map(r=>{
+    const jm=toM(r.jornada||'07:00');
+    let real=0,realStr='—',diaStr='—',diaC='sz';
+    if(r.entrada&&r.salida){
+      real=toM(r.salida)-toM(r.entrada);
+      realStr=fmH(real);
+      const dia=real-jm;diaStr=fmM(dia);diaC=sC(dia);
+      acum+=dia;if(dia>0)pos+=dia;else if(dia<0)neg+=Math.abs(dia);
+    }
+    const ac=fmM(acum);const acC=sC(acum);
+    const we=isWE(r.fecha)?'we':'';
+    const isEditing=r.id===editId?'tr-editing':'';
+    return`<tr class="${we} ${isEditing}">
+      <td class="td-f">${fmtDate(r.fecha)}</td>
+      <td class="td-e">${r.entrada||'—'}</td>
+      <td class="td-s">${r.salida||'—'}</td>
+      <td class="td-j">${r.jornada||'07:00'}</td>
+      <td class="td-r">${realStr}</td>
+      <td class="${diaC}" style="font-weight:700">${diaStr}</td>
+      <td class="${acC}" style="font-weight:700">${ac}</td>
+      <td>${r.nota?`<span class="nota-chip">${r.nota}</span>`:''}</td>
+      <td><div class="row-btns">
+        <button class="ibtn ie" onclick="openEdit('${mk}','${r.id}')" title="Editar">✎</button>
+        <button class="ibtn id" onclick="delRow('${mk}','${r.id}')" title="Eliminar">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  setCards(acum,rows.length,pos,neg);
+}
+
+function setCards(saldo,dias,pos,neg){
+  const el=document.getElementById('saldoMes');
+  el.textContent=fmM(saldo);
+  const card=document.getElementById('cardSaldo');
+  card.className='card '+(saldo>0?'cg':saldo<0?'cr':'cn');
+  document.getElementById('totalDias').textContent=dias;
+  document.getElementById('horasPos').textContent=fmH(pos);
+  document.getElementById('horasNeg').textContent=fmH(neg);
+  // extras pendientes
+  const mk=curMk();
+  const extras=(state.extras[mk]||[]).filter(e=>e.tipo==='pendiente'||e.tipo==='abonar');
+  const totalPend=extras.reduce((a,e)=>a+calcExtraTotal(e.entrada||e.horas,e.salida),0);
+  document.getElementById('extraPend').textContent=fmH(totalPend);
+}
+
+// ─── HORAS EXTRA ─────────────────────────────────────────────────────────────
+function calcExtraTotal(entrada,salida){
+  if(!entrada||!salida)return 0;
+  return toM(salida)-toM(entrada);
+}
+function addExtra(){
+  const fecha=document.getElementById('eFecha').value;
+  if(!fecha){alert('Selecciona la fecha');return;}
+  const entrada=document.getElementById('eEntrada').value;
+  const salida=document.getElementById('eSalida').value;
+  if(!entrada||!salida){alert('Indica hora de inicio y fin');return;}
+  const tipo=document.getElementById('eTipo').value;
+  const nota=document.getElementById('eNota').value.trim();
+  const mk=fecha.slice(0,7);
+  if(!state.extras[mk])state.extras[mk]=[];
+  state.extras[mk].push({id:Date.now().toString(),fecha,entrada,salida,tipo,nota});
+  save(state);
+  document.getElementById('eEntrada').value='';
+  document.getElementById('eSalida').value='';
+  document.getElementById('eNota').value='';
+  renderExtras();updateExtraBadge();
+  renderFichajes();
+}
+function delExtra(mk,id){
+  if(editExtraId===id)closeSideExtra();
+  state.extras[mk]=state.extras[mk].filter(r=>r.id!==id);
+  save(state);renderExtras();updateExtraBadge();renderFichajes();
+}
+function renderExtras(){
+  const mk=curMk();
+  const rows=(state.extras[mk]||[]).slice().sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const etbody=document.getElementById('etbody');
+  if(!rows.length){etbody.innerHTML=`<tr><td colspan="7" class="empty-td">Sin horas extra registradas este mes.</td></tr>`;return;}
+  etbody.innerHTML=rows.map(r=>{
+    const total=calcExtraTotal(r.entrada||r.horas,r.salida);
+    const totalStr=total>0?fmH(total):(r.horas||'—');
+    const isEditing=r.id===editExtraId?'tr-editing':'';
+    return`<tr class="${isEditing}">
+      <td class="td-f">${fmtDate(r.fecha)}</td>
+      <td class="td-e">${r.entrada||r.horas||'—'}</td>
+      <td class="td-s">${r.salida||'—'}</td>
+      <td style="color:#4B2D9B;font-weight:700">${totalStr}</td>
+      <td>${tipoChip(r.tipo)}</td>
+      <td>${r.nota?`<span class="nota-chip">${r.nota}</span>`:''}</td>
+      <td><div class="row-btns">
+        <button class="ibtn ie" onclick="openEditExtra('${mk}','${r.id}')" title="Editar">✎</button>
+        <button class="ibtn id" onclick="delExtra('${mk}','${r.id}')" title="Eliminar">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+function updateExtraBadge(){
+  const mk=curMk();
+  const n=(state.extras[mk]||[]).length;
+  document.getElementById('extraBadge').textContent=n;
+}
+
+// ─── CRUD FICHAJES ────────────────────────────────────────────────────────────
+function addFichaje(){
+  const fecha=document.getElementById('fFecha').value;
+  if(!fecha){alert('Selecciona la fecha');return;}
+  const entrada=document.getElementById('fEntrada').value;
+  const salida=document.getElementById('fSalida').value;
+  const nota=document.getElementById('fNota').value.trim();
+  const jornada=getJornada('jopts','fJornada');
+  const mk=fecha.slice(0,7);
+  if(!state.months[mk])state.months[mk]=[];
+  state.months[mk].push({id:Date.now().toString(),fecha,entrada,salida,jornada,nota});
+  save(state);
+  document.getElementById('fEntrada').value='';
+  document.getElementById('fSalida').value='';
+  document.getElementById('fNota').value='';
+  renderMonthSel(mk);
+  document.getElementById('monthSel').value=mk;
+  render();
+}
+function delRow(mk,id){
+  if(editId===id)closeSide();
+  state.months[mk]=state.months[mk].filter(r=>r.id!==id);
+  save(state);render();
+}
+
+// ─── SIDE PANEL EDICIÓN ───────────────────────────────────────────────────────
+function openEdit(mk,id){
+  const r=state.months[mk].find(x=>x.id===id);
+  if(!r)return;
+  editId=id;editMk=mk;
+  document.getElementById('mFecha').value=r.fecha;
+  document.getElementById('mEntrada').value=r.entrada||'';
+  document.getElementById('mSalida').value=r.salida||'';
+  document.getElementById('mNota').value=r.nota||'';
+  document.getElementById('mJornada').value=r.jornada||'07:00';
+  document.getElementById('sideEditDateLabel').textContent=fmtDate(r.fecha);
+  // set jopt
+  document.querySelectorAll('#mJopts .jopt').forEach(b=>b.classList.remove('active'));
+  const match=document.querySelector(`#mJopts .jopt[data-val="${r.jornada||'07:00'}"]`);
+  if(match){match.classList.add('active');document.getElementById('mCustomJ').style.display='none';}
+  else{document.querySelector('#mJopts .jopt[data-val="custom"]').classList.add('active');document.getElementById('mCustomJ').style.display='block';}
+  document.getElementById('sidePanel').classList.add('open');
+  document.getElementById('sideOverlay').classList.add('open');
+  document.getElementById('mainContent').classList.add('shifted');
+  updatePreview();
+  renderFichajes(); // highlight row
+}
+function closeSide(){
+  editId=null;editMk=null;
+  document.getElementById('sidePanel').classList.remove('open');
+  document.getElementById('sideOverlay').classList.remove('open');
+  document.getElementById('mainContent').classList.remove('shifted');
+  renderFichajes();
+}
+function saveEdit(){
+  if(!editId||!editMk)return;
+  const r=state.months[editMk].find(x=>x.id===editId);
+  if(!r)return;
+  r.fecha=document.getElementById('mFecha').value;
+  r.entrada=document.getElementById('mEntrada').value;
+  r.salida=document.getElementById('mSalida').value;
+  r.nota=document.getElementById('mNota').value.trim();
+  r.jornada=getJornada('mJopts','mJornada');
+  const newMk=r.fecha.slice(0,7);
+  if(newMk!==editMk){
+    state.months[editMk]=state.months[editMk].filter(x=>x.id!==editId);
+    if(!state.months[newMk])state.months[newMk]=[];
+    state.months[newMk].push(r);
+  }
+  save(state);closeSide();
+  renderMonthSel(newMk);
+  document.getElementById('monthSel').value=newMk;
+  render();
+}
+
+// preview en tiempo real
+function updatePreview(){
+  const ent=document.getElementById('mEntrada').value;
+  const sal=document.getElementById('mSalida').value;
+  const jor=getJornada('mJopts','mJornada');
+  const prev=document.getElementById('sidePreview');
+  if(!ent||!sal){prev.style.display='none';return;}
+  prev.style.display='block';
+  const real=toM(sal)-toM(ent);
+  const dia=real-toM(jor);
+  document.getElementById('pvReal').textContent=fmH(real);
+  const pvDia=document.getElementById('pvDia');
+  pvDia.textContent=fmM(dia);
+  pvDia.className=dia>0?'sp':dia<0?'sn':'sz';
+  pvDia.style.fontSize='16px';pvDia.style.fontWeight='700';
+}
+['mEntrada','mSalida','mJornada'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',updatePreview);
+});
+
+// ─── SIDE PANEL HORAS EXTRA ──────────────────────────────────────────────────
+
+function openEditExtra(mk,id){
+  const r=state.extras[mk].find(x=>x.id===id);
+  if(!r)return;
+  editExtraId=id;editExtraMk=mk;
+  // cerrar el otro panel si estuviera abierto
+  closeSide();
+  document.getElementById('xFecha').value=r.fecha;
+  document.getElementById('xEntrada').value=r.entrada||r.horas||'';
+  document.getElementById('xSalida').value=r.salida||'';
+  document.getElementById('xNota').value=r.nota||'';
+  document.getElementById('xTipo').value=r.tipo||'pendiente';
+  document.getElementById('sideExtraDateLabel').textContent=fmtDate(r.fecha);
+  document.getElementById('sidePanelExtra').classList.add('open');
+  document.getElementById('sideOverlay').classList.add('open');
+  document.getElementById('mainContent').classList.add('shifted');
+  updateExtraPreview();
+  renderExtras();
+}
+function closeSideExtra(){
+  editExtraId=null;editExtraMk=null;
+  document.getElementById('sidePanelExtra').classList.remove('open');
+  document.getElementById('sideOverlay').classList.remove('open');
+  document.getElementById('mainContent').classList.remove('shifted');
+  renderExtras();
+}
+function saveEditExtra(){
+  if(!editExtraId||!editExtraMk)return;
+  const r=state.extras[editExtraMk].find(x=>x.id===editExtraId);
+  if(!r)return;
+  r.fecha=document.getElementById('xFecha').value;
+  r.entrada=document.getElementById('xEntrada').value;
+  r.salida=document.getElementById('xSalida').value;
+  r.nota=document.getElementById('xNota').value.trim();
+  r.tipo=document.getElementById('xTipo').value;
+  delete r.horas; // migrar registros viejos
+  const newMk=r.fecha.slice(0,7);
+  if(newMk!==editExtraMk){
+    state.extras[editExtraMk]=state.extras[editExtraMk].filter(x=>x.id!==editExtraId);
+    if(!state.extras[newMk])state.extras[newMk]=[];
+    state.extras[newMk].push(r);
+  }
+  save(state);closeSideExtra();
+  renderMonthSel(newMk);
+  document.getElementById('monthSel').value=newMk;
+  render();
+}
+function updateExtraPreview(){
+  const ent=document.getElementById('xEntrada').value;
+  const sal=document.getElementById('xSalida').value;
+  const prev=document.getElementById('sideExtraPreview');
+  if(!ent||!sal){prev.style.display='none';return;}
+  prev.style.display='block';
+  const total=toM(sal)-toM(ent);
+  document.getElementById('pvExtraTotal').textContent=total>0?fmH(total):'— (fin antes de inicio)';
+}
+['xEntrada','xSalida'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',updateExtraPreview);
+});
+
+
+
+function exportExcel(){
+  const mk=curMk();
+  const[y,m]=mk.split('-').map(Number);
+  const nomMes=MNAMES[m-1];
+  const wb=XLSX.utils.book_new();
+
+  // --- Hoja 1: Fichajes ---
+  const rows=(state.months[mk]||[]).slice().sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  let acum=0;
+  const hdr=[['FICHAJES — '+nomMes+' '+y],[]];
+  const cols=[['Fecha','Día semana','Entrada','Salida','Jornada oblig.','Tiempo real','Saldo día','Saldo acumulado','Nota']];
+  const dataF=[...hdr,...cols];
+  rows.forEach(r=>{
+    const p=r.fecha.split('-');const dt=new Date(+p[0],+p[1]-1,+p[2]);
+    const jm=toM(r.jornada||'07:00');
+    let real='',saldoDia='';
+    if(r.entrada&&r.salida){
+      const rm=toM(r.salida)-toM(r.entrada);
+      real=fmH(rm);const sd=rm-jm;saldoDia=fmM(sd);acum+=sd;
+    }
+    dataF.push([r.fecha,DAYS[dt.getDay()],r.entrada||'',r.salida||'',r.jornada||'07:00',real,saldoDia,fmM(acum),r.nota||'']);
+  });
+  dataF.push([]);
+  dataF.push(['','','','','','','SALDO TOTAL',fmM(acum),'']);
+  const ws1=XLSX.utils.aoa_to_sheet(dataF);
+  ws1['!cols']=[{wch:12},{wch:10},{wch:9},{wch:9},{wch:13},{wch:14},{wch:14},{wch:16},{wch:22}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Fichajes');
+
+  // --- Hoja 2: Horas extra ---
+  const extras=(state.extras[mk]||[]).slice().sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const hdr2=[['HORAS EXTRA — '+nomMes+' '+y],[]];
+  const cols2=[['Fecha','Día semana','Inicio','Fin','Total horas','Estado','Nota']];
+  const dataE=[...hdr2,...cols2];
+  let totPend=0,totComp=0,totPag=0,totAbonar=0;
+  extras.forEach(e=>{
+    const p=e.fecha.split('-');const dt=new Date(+p[0],+p[1]-1,+p[2]);
+    const ent=e.entrada||e.horas||'';
+    const sal=e.salida||'';
+    const hm=calcExtraTotal(ent,sal);
+    const totalStr=hm>0?fmH(hm):(e.horas||'');
+    if(e.tipo==='pendiente')totPend+=hm;
+    else if(e.tipo==='compensada')totComp+=hm;
+    else if(e.tipo==='pagada')totPag+=hm;
+    else if(e.tipo==='abonar')totAbonar+=hm;
+    dataE.push([e.fecha,DAYS[dt.getDay()],ent,sal,totalStr,TIPOS[e.tipo]||e.tipo,e.nota||'']);
+  });
+  dataE.push([]);
+  dataE.push(['','','','','Pendientes de compensar',fmH(totPend),'']);
+  dataE.push(['','','','','Compensadas con descanso',fmH(totComp),'']);
+  dataE.push(['','','','','Abonadas en nómina',fmH(totPag),'']);
+  dataE.push(['','','','','A abonar en nómina',fmH(totAbonar),'']);
+  dataE.push(['','','','','TOTAL',fmH(totPend+totComp+totPag+totAbonar),'']);
+  const ws2=XLSX.utils.aoa_to_sheet(dataE);
+  ws2['!cols']=[{wch:12},{wch:10},{wch:8},{wch:8},{wch:14},{wch:24},{wch:24}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Horas Extra');
+
+  XLSX.writeFile(wb,`Fichajes_${nomMes}_${y}.xlsx`);
+}
+
+// ─── BACKUP / IMPORTAR ───────────────────────────────────────────────────────
+function exportBackup(){
+  const fecha=new Date().toISOString().slice(0,10);
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`fichajes_backup_${fecha}.json`;
+  a.click();URL.revokeObjectURL(a.href);
+}
+function importBackup(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!data.months)throw new Error('Formato incorrecto');
+      if(!confirm(`¿Importar backup?\nSe reemplazarán todos los datos actuales con los del archivo:\n${file.name}`)){e.target.value='';return;}
+      state=data;if(!state.extras)state.extras={};
+      save(state);renderMonthSel(getMonths().at(-1));render();
+      alert('✓ Backup importado correctamente');
+    }catch(err){alert('Error al importar: el archivo no es válido.\n'+err.message);}
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+// ─── GOOGLE SHEETS ────────────────────────────────────────────────────────────
+const GS_KEY='fichajes_sheets_url';
+function getSheetsUrl(){return localStorage.getItem(GS_KEY)||'';}
+function openSheetsConfig(){
+  document.getElementById('sheetsUrl').value=getSheetsUrl();
+  document.getElementById('sheetsModal').style.display='flex';
+}
+function closeSheetsModal(){document.getElementById('sheetsModal').style.display='none';}
+function saveSheetsConfig(){
+  const url=document.getElementById('sheetsUrl').value.trim();
+  if(!url){alert('Pega la URL del Web App');return;}
+  localStorage.setItem(GS_KEY,url);
+  closeSheetsModal();
+  updateSheetsBar();
+  syncToSheets();
+}
+function updateSheetsBar(){
+  const url=getSheetsUrl();
+  const bar=document.getElementById('sheetsBar');
+  bar.style.display=url?'flex':'none';
+}
+
+async function syncToSheets(){
+  const url=getSheetsUrl();
+  if(!url){openSheetsConfig();return;}
+  try{
+    const fichajes=[];
+    Object.values(state.months).forEach(mes=>{
+      mes.forEach(r=>{
+        const jm=toM(r.jornada||'07:00');
+        let real='',saldoDia='';
+        if(r.entrada&&r.salida){const rm=toM(r.salida)-toM(r.entrada);real=fmH(rm);saldoDia=fmM(rm-jm);}
+        fichajes.push({fecha:r.fecha,entrada:r.entrada||'',salida:r.salida||'',jornada:r.jornada||'07:00',real,saldoDia,nota:r.nota||''});
+      });
+    });
+    const extras=[];
+    Object.values(state.extras||{}).forEach(mes=>{
+      mes.forEach(e=>{
+        const ent=e.entrada||e.horas||'';const sal=e.salida||'';
+        const tot=calcExtraTotal(ent,sal);
+        extras.push({fecha:e.fecha,entrada:ent,salida:sal,total:tot>0?fmH(tot):'',tipo:TIPOS[e.tipo]||e.tipo,nota:e.nota||''});
+      });
+    });
+    const payload={fichajes,extras,exportado:new Date().toISOString()};
+    // Usar no-cors para evitar bloqueo CORS desde archivo local
+    await fetch(url,{
+      method:'POST',
+      mode:'no-cors',
+      body:JSON.stringify(payload)
+    });
+    const ts=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('sheetsLastSync').textContent='Ultimo envio: '+ts;
+    document.getElementById('sheetsMsg').textContent='Datos enviados a Google Sheets';
+    setTimeout(()=>{document.getElementById('sheetsMsg').textContent='Google Sheets conectado';},3000);
+    alert('Datos enviados a Google Sheets correctamente.\nAbre el Sheet para comprobarlo.');
+  }catch(err){
+    alert('Error al sincronizar:\n'+err.message);
+  }
+}
+
+async function loadFromSheets(){
+  const url=getSheetsUrl();
+  if(!url){openSheetsConfig();return;}
+  try{
+    // Para cargar usamos un iframe trick via URL con callback JSONP
+    // o abrimos directamente la URL de carga
+    const loadUrl=url+'?action=load&callback=jsonpCallback';
+    const data = await new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      window.jsonpCallback=function(d){resolve(d);delete window.jsonpCallback;script.remove();};
+      script.onerror=()=>reject(new Error('No se pudo conectar con el script'));
+      script.src=loadUrl;
+      document.head.appendChild(script);
+      setTimeout(()=>reject(new Error('Timeout al cargar datos')),10000);
+    });
+    if(!data||!data.months)throw new Error('Formato de datos incorrecto');
+    if(!confirm('Cargar datos desde Google Sheets?\nSe reemplazaran los datos locales actuales.'))return;
+    state=data;if(!state.extras)state.extras={};
+    save(state);renderMonthSel(getMonths().at(-1));render();
+    alert('Datos cargados desde Google Sheets correctamente.');
+  }catch(err){
+    alert('Error al cargar desde Sheets:\n'+err.message+'\n\nPrueba a usar el backup JSON como alternativa.');
+  }
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function init(){
+  const t=new Date();
+  const td=t.toISOString().slice(0,10);
+  document.getElementById('fFecha').value=td;
+  document.getElementById('eFecha').value=td;
+  renderMonthSel(getMonths().at(-1));
+  render();
+  updateSheetsBar();
+}
+init();
+</script>
+</body>
+</html>
