@@ -852,6 +852,7 @@ async function syncToSheets(){
   const url=getSheetsUrl();
   if(!url){openSheetsConfig();return;}
   try{
+    // Enviamos el state completo (months + extras) para poder recuperarlo despues
     const fichajes=[];
     Object.values(state.months).forEach(mes=>{
       mes.forEach(r=>{
@@ -869,18 +870,20 @@ async function syncToSheets(){
         extras.push({fecha:e.fecha,entrada:ent,salida:sal,total:tot>0?fmH(tot):'',tipo:TIPOS[e.tipo]||e.tipo,nota:e.nota||''});
       });
     });
-    const payload={fichajes,extras,exportado:new Date().toISOString()};
-    // Usar no-cors para evitar bloqueo CORS desde archivo local
-    await fetch(url,{
-      method:'POST',
-      mode:'no-cors',
-      body:JSON.stringify(payload)
-    });
+    // Incluimos tanto el state completo (para importar) como las filas (para visualizar en Sheets)
+    const payload={
+      months: state.months,
+      extras: state.extras||{},
+      fichajes,
+      extras_filas: extras,
+      exportado: new Date().toISOString()
+    };
+    await fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify(payload)});
     const ts=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('sheetsLastSync').textContent='Ultimo envio: '+ts;
     document.getElementById('sheetsMsg').textContent='Datos enviados a Google Sheets';
     setTimeout(()=>{document.getElementById('sheetsMsg').textContent='Google Sheets conectado';},3000);
-    alert('Datos enviados a Google Sheets correctamente.\nAbre el Sheet para comprobarlo.');
+    alert('Datos enviados a Google Sheets correctamente.');
   }catch(err){
     alert('Error al sincronizar:\n'+err.message);
   }
