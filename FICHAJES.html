@@ -893,21 +893,16 @@ async function loadFromSheets(){
   const url=getSheetsUrl();
   if(!url){openSheetsConfig();return;}
   try{
-    // Para cargar usamos un iframe trick via URL con callback JSONP
-    // o abrimos directamente la URL de carga
-    const loadUrl=url+'?action=load&callback=jsonpCallback';
-    const data = await new Promise((resolve,reject)=>{
-      const script=document.createElement('script');
-      window.jsonpCallback=function(d){resolve(d);delete window.jsonpCallback;script.remove();};
-      script.onerror=()=>reject(new Error('No se pudo conectar con el script'));
-      script.src=loadUrl;
-      document.head.appendChild(script);
-      setTimeout(()=>reject(new Error('Timeout al cargar datos')),10000);
-    });
-    if(!data||!data.months)throw new Error('Formato de datos incorrecto');
-    if(!confirm('Cargar datos desde Google Sheets?\nSe reemplazaran los datos locales actuales.'))return;
-    state=data;if(!state.extras)state.extras={};
-    save(state);renderMonthSel(getMonths().at(-1));render();
+    const resp = await fetch(url+'?action=load');
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const data = await resp.json();
+    if(!data||!data.months) throw new Error('Formato de datos incorrecto');
+    if(!confirm('Cargar datos desde Google Sheets?\nSe reemplazaran los datos locales actuales.')) return;
+    state=data;
+    if(!state.extras) state.extras={};
+    save(state);
+    renderMonthSel(getMonths().at(-1));
+    render();
     alert('Datos cargados desde Google Sheets correctamente.');
   }catch(err){
     alert('Error al cargar desde Sheets:\n'+err.message+'\n\nPrueba a usar el backup JSON como alternativa.');
