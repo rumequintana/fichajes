@@ -862,20 +862,20 @@ async function syncToSheets(){
         fichajes.push({fecha:r.fecha,entrada:r.entrada||'',salida:r.salida||'',jornada:r.jornada||'07:00',real,saldoDia,nota:r.nota||''});
       });
     });
-    const extras=[];
+    const extras_filas=[];
     Object.values(state.extras||{}).forEach(mes=>{
+      if(!Array.isArray(mes)) return;
       mes.forEach(e=>{
         const ent=e.entrada||e.horas||'';const sal=e.salida||'';
         const tot=calcExtraTotal(ent,sal);
-        extras.push({fecha:e.fecha,entrada:ent,salida:sal,total:tot>0?fmH(tot):'',tipo:TIPOS[e.tipo]||e.tipo,nota:e.nota||''});
+        extras_filas.push({fecha:e.fecha,entrada:ent,salida:sal,total:tot>0?fmH(tot):'',tipo:TIPOS[e.tipo]||e.tipo,nota:e.nota||''});
       });
     });
-    // Incluimos tanto el state completo (para importar) como las filas (para visualizar en Sheets)
     const payload={
       months: state.months,
       extras: state.extras||{},
       fichajes,
-      extras_filas: extras,
+      extras_filas,
       exportado: new Date().toISOString()
     };
     await fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify(payload)});
