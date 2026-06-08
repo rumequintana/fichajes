@@ -878,13 +878,21 @@ async function syncToSheets(){
       extras_filas,
       exportado: new Date().toISOString()
     };
-    // Enviar via fetch normal (desde https:// no hay problemas CORS con Apps Script)
-    const resp = await fetch(url, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify(payload)
+    // Enviar via JSONP (unico metodo que funciona sin CORS desde GitHub Pages)
+    const jsonData = encodeURIComponent(JSON.stringify(payload));
+    await new Promise((resolve, reject) => {
+      const cbName = 'gsCallback_' + Date.now();
+      const script = document.createElement('script');
+      window[cbName] = function(r) {
+        resolve(r);
+        delete window[cbName];
+        script.remove();
+      };
+      script.onerror = () => { reject(new Error('Failed to fetch')); script.remove(); };
+      script.src = url + '?callback=' + cbName + '&data=' + jsonData;
+      document.head.appendChild(script);
+      setTimeout(() => { resolve({ok:true}); }, 5000);
     });
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
     const ts=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('sheetsLastSync').textContent='Ultimo envio: '+ts;
     document.getElementById('sheetsMsg').textContent='Datos enviados a Google Sheets';
