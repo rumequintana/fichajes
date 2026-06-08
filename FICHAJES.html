@@ -878,7 +878,13 @@ async function syncToSheets(){
       extras_filas,
       exportado: new Date().toISOString()
     };
-    await fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify(payload)});
+    // Enviar via fetch normal (desde https:// no hay problemas CORS con Apps Script)
+    const resp = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify(payload)
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
     const ts=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('sheetsLastSync').textContent='Ultimo envio: '+ts;
     document.getElementById('sheetsMsg').textContent='Datos enviados a Google Sheets';
