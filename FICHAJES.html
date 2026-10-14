@@ -219,6 +219,27 @@ tr:hover td{background:#FAFAF7}
         </div>
       </div>
 
+      <!-- RESUMEN ANUAL -->
+      <div class="cards" id="cardsAnual">
+        <div id="cardSaldoAnual" class="card cn">
+          <span class="card-lbl">Saldo anual</span>
+          <span class="card-val" id="saldoAnual">—</span>
+          <span class="card-sub" id="saldoAnualYear"></span>
+        </div>
+        <div class="card cg">
+          <span class="card-lbl">A favor (año)</span>
+          <span class="card-val" id="horasAnualPos">0 h 00</span>
+        </div>
+        <div class="card cr">
+          <span class="card-lbl">Deuda (año)</span>
+          <span class="card-val" id="horasAnualNeg">0 h 00</span>
+        </div>
+        <div class="card ca">
+          <span class="card-lbl">Extras realizadas (año)</span>
+          <span class="card-val" id="extrasAnualTotal">0 h 00</span>
+        </div>
+      </div>
+
       <!-- SECTION NAV -->
       <div class="section-nav">
         <button class="snav-btn active" id="snavFichajes" onclick="showSection('fichajes')">Fichajes</button>
@@ -470,7 +491,34 @@ function getJornada(group,customId){
 
 // ─── RENDER FICHAJES ──────────────────────────────────────────────────────────
 function render(){
-  renderFichajes();renderExtras();updateExtraBadge();
+  renderFichajes();renderExtras();updateExtraBadge();calcAnualTotals();
+}
+function calcAnualTotals(){
+  const year=new Date().getFullYear().toString();
+  let saldo=0,pos=0,neg=0,extras=0;
+  Object.keys(state.months).filter(k=>k.startsWith(year)).forEach(mk=>{
+    (state.months[mk]||[]).forEach(r=>{
+      if(r.entrada&&r.salida){
+        const jm=toM(r.jornada||'07:00');
+        const real=toM(r.salida)-toM(r.entrada);
+        const dia=real-jm;
+        saldo+=dia;
+        if(dia>0)pos+=dia;else if(dia<0)neg+=Math.abs(dia);
+      }
+    });
+  });
+  Object.keys(state.extras).filter(k=>k.startsWith(year)).forEach(mk=>{
+    (state.extras[mk]||[]).forEach(e=>{
+      extras+=calcExtraTotal(e.entrada||e.horas,e.salida);
+    });
+  });
+  document.getElementById('saldoAnual').textContent=fmM(saldo);
+  const card=document.getElementById('cardSaldoAnual');
+  card.className='card '+(saldo>0?'cg':saldo<0?'cr':'cn');
+  document.getElementById('saldoAnualYear').textContent=year;
+  document.getElementById('horasAnualPos').textContent=fmH(pos);
+  document.getElementById('horasAnualNeg').textContent=fmH(neg);
+  document.getElementById('extrasAnualTotal').textContent=fmH(extras);
 }
 function renderFichajes(){
   const mk=curMk();
@@ -923,4 +971,3 @@ init();
 </script>
 </body>
 </html>
-
